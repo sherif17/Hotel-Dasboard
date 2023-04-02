@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import plotly.express as px
 
 months_short = [
     "Jan",
@@ -29,7 +30,7 @@ def select_type(hotel_type="All"):
     -------
     dataframe with hotel data filtered by hotel type
     """
-    hotels = pd.read_csv("data/processed/clean_hotels.csv")
+    hotels = pd.read_csv("clean_hotels.csv")
     # filter based on hotel type selection
     if hotel_type == "Resort":
         hotels = hotels[hotels["Hotel type"] == "Resort"]
@@ -285,6 +286,67 @@ def right_hist_data(hotel_type="All", year=2016, month=1):
 
     return df
 
+def get_guest_map_prices_busy_months():
+    hotels = pd.read_csv("hotels.csv")
+    country_data = pd.DataFrame(hotels.loc[hotels["is_canceled"] == 0]["country"].value_counts())
+    # country_data.index.name = "country"
+    country_data.rename(columns={"country": "Number of Guests"}, inplace=True)
+    total_guests = country_data["Number of Guests"].sum()
+    country_data["Guests in %"] = round(country_data["Number of Guests"] / total_guests * 100, 2)
+    country_data["country"] = country_data.index
+
+    guest_map = px.choropleth(country_data,
+                              locations=country_data.index,
+                              color=country_data["Guests in %"],
+                              hover_name=country_data.index,
+                              color_continuous_scale=px.colors.sequential.Plasma)
+
+    # normalize price per night (adr):
+    hotels["adr_pp"] = hotels["adr"] / (hotels["adults"] + hotels["children"])
+    full_data_guests = hotels.loc[hotels["is_canceled"] == 0]  # only actual gusts
+    room_prices = full_data_guests[["hotel", "reserved_room_type", "adr_pp"]].sort_values("reserved_room_type")
+
+    prices = px.box(x=room_prices["reserved_room_type"],
+                    y=room_prices["adr_pp"], color=room_prices["hotel"])
+    rh = hotels.loc[(hotels["hotel"] == "Resort Hotel") & (hotels["is_canceled"] == 0)]
+    ch = hotels.loc[(hotels["hotel"] == "City Hotel") & (hotels["is_canceled"] == 0)]
+
+    # Create a DateFrame with the relevant data:
+    resort_guests_monthly = rh.groupby("arrival_date_month")["hotel"].count()
+    city_guests_monthly = ch.groupby("arrival_date_month")["hotel"].count()
+
+    resort_guest_data = pd.DataFrame({"month": list(resort_guests_monthly.index),
+                                      "hotel": "Resort hotel",
+                                      "guests": list(resort_guests_monthly.values)})
+
+    city_guest_data = pd.DataFrame({"month": list(city_guests_monthly.index),
+                                    "hotel": "City hotel",
+                                    "guests": list(city_guests_monthly.values)})
+    full_guest_data = pd.concat([resort_guest_data, city_guest_data], ignore_index=True)
+
+    # order by month:
+    ordered_months = ["January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"]
+    full_guest_data["month"] = pd.Categorical(full_guest_data["month"], categories=ordered_months, ordered=True)
+
+    # Dataset contains July and August date from 3 years, the other month from 2 years. Normalize data:
+    full_guest_data.loc[(full_guest_data["month"] == "July") | (full_guest_data["month"] == "August"),
+                        "guests"] /= 3
+    full_guest_data.loc[~((full_guest_data["month"] == "July") | (full_guest_data["month"] == "August")),
+                        "guests"] /= 2
+
+    # show figure:
+    busy_months = px.line(x="month", y="guests", color="hotel", data_frame=full_guest_data)
+
+    total_bookings = hotels.shape[0]
+    cancelled_bookings = hotels[hotels['is_canceled'] == 1].shape[0]
+    bookings_per_month = hotels.groupby(['arrival_date_year', 'arrival_date_month'])['hotel'].count().reset_index()
+    max_bookings_month = bookings_per_month.loc[bookings_per_month['hotel'].idxmax()]
+    max_bookings_month = hotels.groupby('arrival_date_month')['hotel'].count().sort_values(ascending=False).iloc[0]
+
+
+
+    return guest_map,prices,busy_months,total_bookings,cancelled_bookings,max_bookings_month
 
 if __name__ == "__main__":
     main()

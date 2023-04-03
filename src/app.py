@@ -19,9 +19,11 @@ from data_wrangling import (
     get_month_data,
     left_hist_data,
     right_hist_data,
-    get_guest_map_prices_busy_months
+    get_guest_map_prices_busy_months,
+    sherif_func
 )
-guest_map,prices,busy_months,total_bookings,cancelled_bookings,max_bookings_month=get_guest_map_prices_busy_months()
+guest_map,prices,busy_months,total_bookings,cancelled_bookings,max_bookings_month,fig=get_guest_map_prices_busy_months()
+length_of_stay,cancel_sizes,booking_Segment,booking_canceled=sherif_func()
 app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP], title="Super Hotel Management",suppress_callback_exceptions=True
 )
@@ -81,7 +83,7 @@ collapse = html.Div(
                 "width": "150px",
                 "background-color": "white",
                 "color": "black",
-                # "fontWeight": "bold",
+                "fontWeight": "bold",
                 # "border": "0.5px solid #FFA500",
             },
         ),
@@ -187,8 +189,9 @@ card_top = dbc.Card(
                                     children="",
                                     style={
                                         "text-align": "center",
-                                        # "fontWeight": "bold",
-                                        "color": "#537aaa",
+                                        "fontWeight": "bold",
+                                        #"color": "#537aaa",
+
                                     },
                                 ),
                                 html.P(
@@ -196,8 +199,8 @@ card_top = dbc.Card(
                                     children="",
                                     style={
                                         "text-align": "center",
-                                        # "fontWeight": "bold",
-                                        "color": "#f9a200",
+                                         "fontWeight": "bold",
+                                      #  "color": "#f9a200",
                                     },
                                 ),
                             ],
@@ -217,8 +220,8 @@ card_top = dbc.Card(
                                     children="",
                                     style={
                                         "text-align": "center",
-                                        # "fontWeight": "bold",
-                                        "color": "#537aaa",
+                                         "fontWeight": "bold",
+                                        #"color": "#537aaa",
                                     },
                                 ),
                                 html.P(
@@ -226,8 +229,8 @@ card_top = dbc.Card(
                                     children="",
                                     style={
                                         "text-align": "center",
-                                        # "fontWeight": "bold",
-                                        "color": "#f9a200",
+                                         "fontWeight": "bold",
+                                        #"color": "#f9a200",
                                     },
                                 ),
                             ],
@@ -290,9 +293,9 @@ jumbotron = dbc.Container(
                                     className="display-4",
                                     style={
                                         "text-align": "left",
-                                        "font-size": "55px",
+                                        "font-size": "35px",
                                         "color": "black",
-                                        # "fontWeight": "bold",
+                                        "fontWeight": "bold",
                                     },
                                 ),
                                 dbc.Collapse(
@@ -312,7 +315,8 @@ jumbotron = dbc.Container(
             ],
             fluid=True,
                 style={
-                    "padding": 50,
+                    "padding": 5,
+                    "height": "135px"
                 },
         )
 
@@ -328,7 +332,9 @@ info_area = dbc.Container(
                             # style={"color": "#023047"}
                         ),
                         html.Br(),
-                        html.H5("Select year", style={"color": "#023047"}),
+                        html.H5("Select year",
+                                #style={"color": "#023047"}
+                                ),
                         dcc.Dropdown(
                             id="year-dropdown",
                             options=[{"label": year, "value": year} for year in years],
@@ -393,7 +399,7 @@ info_area = dbc.Container(
 )
 
 footer = dcc.Markdown(
-    """This dashboard was made by Group 20 of MDS DSCI 532 [Link to GitHub source](https://github.com/UBC-MDS/dsci-532_group-20). The data has been sourced from [Link to data source](https://github.com/rfordatascience/tidytuesday/tree/master/data/2020/2020-02-11).""",
+    """This dashboard is made by NC Team(Sherif, Ola and Nouran [Link to GitHub source](https://github.com/sherif17/Hotel-Dasboard). The data has been sourced from [Link to data source](https://www.kaggle.com/datasets/jessemostipak/hotel-booking-demand).""",
     style={"text-align": "center"},
 )
 
@@ -539,102 +545,41 @@ info_area2 = dbc.Container(
     dbc.Row([
         dbc.Col([
             dbc.Card([
-            html.H1(children='Average number of hotel guests per month', style={'textAlign': 'center'}),
-            dcc.Graph(figure=busy_months)]
-                 # className="w-100 mb-3",
-                 # style={
-                 #    "border-width": "0",
-                 #    "width": "300%",
-                 #    "height": "300px",
-                 # },
+            html.H1(children='Bookings per market segment', style={'textAlign': 'center'}),
+            dcc.Graph(figure=booking_Segment)],
+                  className="w-100 mb-3",
+                 style={
+                    "border-width": "0",
+                    "width": "400px",
+                    "height": "300px",
+                 },
             )
         ]),
         dbc.Col([
             dbc.Row([
             dbc.Card([
-            html.H1(children='Price of room types per night and person', style={'textAlign': 'center'}),
-            dcc.Graph(figure=prices)]
-                # className="w-100 mb-3",
-                # style={
-                #     "border-width": "0",
-                #     "width": "300%",
-                #     "height": "300px",
-                # },
+            html.H1(children='Cancellation sizes', style={'textAlign': 'center'}),
+            dcc.Graph(figure=cancel_sizes)],
+                 className="w-100 mb-3",
+                style={
+                    "border-width": "0",
+                    "width": "600px",
+                    "height": "300px",
+                },
         )
     ])
         ])
 
     ])
 
-]
-)
+])
 ##************************************************************************************************************************
-
 
 card_top3 = dbc.Card(
     [
         dbc.Row(
             [
-                dbc.Col(
-                    [
-                        html.Iframe(
-                            id="year-plot",
-                            style={
-                                "border-width": "0",
-                                "width": "100%",
-                                "height": "375px",
-                            },
-                        ),
-                        html.P(
-                            id="year_stats_card",
-                            children="",
-                            style={
-                                "text-align": "center",
-                                # "fontWeight": "bold",
-                                "color": "#537aaa",
-                            },
-                        ),
-                        html.P(
-                            id="year_stats_card2",
-                            children="",
-                            style={
-                                "text-align": "center",
-                                # "fontWeight": "bold",
-                                "color": "#f9a200",
-                            },
-                        ),
-                    ],
-                ),
-                dbc.Col(
-                    [
-                        html.Iframe(
-                            id="month-plot",
-                            style={
-                                "border-width": "0",
-                                "width": "100%",
-                                "height": "375px",
-                            },
-                        ),
-                        html.P(
-                            id="month_stats_card",
-                            children="",
-                            style={
-                                "text-align": "center",
-                                # "fontWeight": "bold",
-                                "color": "#537aaa",
-                            },
-                        ),
-                        html.P(
-                            id="month_stats_card2",
-                            children="",
-                            style={
-                                "text-align": "center",
-                                # "fontWeight": "bold",
-                                "color": "#f9a200",
-                            },
-                        ),
-                    ],
-                ),
+                dbc.Card([dcc.Graph(figure=booking_canceled)])
             ],
         )
     ],
@@ -645,39 +590,45 @@ card_top3 = dbc.Card(
         "margin-right": "15px",
     },
 )
-
-card_left3 = dbc.Card(
+card_top31 = dbc.Card(
     [
-        dbc.CardBody(
-            html.Iframe(
-                id="hist1",
-                style={
-                    "border-width": "0",
-                    "width": "120%",
-                    "height": "300px",
-                },
-            ),
-        ),
+        dbc.Row(
+            [
+                dbc.Card([dcc.Graph(figure=busy_months)])
+            ],
+        )
     ],
     className="w-100 mb-3",
-    style={"border": "1.5px solid #d3d3d3"},
+    style={
+        "border": "1.5px solid #d3d3d3",
+        "margin-left": "15px",
+        "margin-right": "15px",
+    },
+)
+card_left3 = dbc.Card(
+    [
+        dbc.Row(
+            [
+                dbc.Card([dcc.Graph(figure=length_of_stay)])
+            ],
+        )
+    ],
+    className="w-100 mb-3",
+    style={"border": "1.5px solid #d3d3d3",
+           "width": "130px"},
 )
 
 card_right3 = dbc.Card(
     [
-        dbc.CardBody(
-            html.Iframe(
-                id="hist2",
-                style={
-                    "border-width": "0",
-                    "width": "100%",
-                    "height": "300px",
-                },
-            ),
-        ),
+        dbc.Row(
+            [
+                dbc.Card([dcc.Graph(figure=fig)])
+            ],
+        )
     ],
     className="w-100 mb-3",
-    style={"border": "1.5px solid #d3d3d3"},
+    style={"border": "1.5px solid #d3d3d3",
+           "width": "130px"},
 )
 
 
@@ -685,11 +636,14 @@ info_area3 = dbc.Container(
     [
         dbc.Col(
                     [
-                        dbc.Row([card_top2]),
+                        dbc.Row([card_top31]),
+                        dbc.Row([card_top3]),
                         dbc.Row(
                             [
-                                dbc.Col([card_left2]),
-                                dbc.Col([card_right2]),
+                                dbc.Col([card_left3],
+                                        style={"width":"130px"}),
+                                dbc.Col([card_right3],
+                                        style={"width":"130px"}),
                             ],
                         ),
                     ],
@@ -709,7 +663,7 @@ SIDEBAR_STYLE = {
     "top": 0,
     "left": 0,
     "bottom": 0,
-    "width": "16rem",
+    "width": "14rem",
     "padding": "2rem 1rem",
     "background-color": "#f8f9fa",
 }
@@ -728,10 +682,10 @@ sidebar = html.Div(
         html.Hr(),
         dbc.Nav(
             [
-                dbc.NavLink("General" + " 📘", href="/", active="exact", style={'height': "5vw"}),
-                dbc.NavLink("Maps" + " 🌎", href="/Maps", active="exact", style={'height': "5vw"}),
-                dbc.NavLink("Exploration" + ' 💡', href="/Exploration", active="exact", style={'height': "5vw"}),
+                dbc.NavLink("Overview" + " 📘", href="/", active="exact", style={'height': "5vw"}),
+                dbc.NavLink("Data Matrix" + " 📈", href="/Maps", active="exact", style={'height': "5vw"}),
                 dbc.NavLink("Visualization" + " 📊", href="/Visualization", active="exact", style={'height': "5vw"}),
+
 
             ],
             vertical=True,
@@ -756,10 +710,6 @@ def render_page_content(pathname):
         return [
             html.Div([jumbotron, info_area, html.Hr(), footer])
 
-        ]
-    elif pathname == "/Exploration":
-        return [
-            html.Div([jumbotron, info_area3, html.Hr(), footer])
         ]
     elif pathname == "/Visualization":
         return [
@@ -975,7 +925,7 @@ def histogram_1(hotel_type, year, month):
             + " "
             + str(year),
         )
-        .mark_bar(color="orange", size=15)
+        .mark_bar( size=15)
         .encode(
             alt.Y("Country of origin", sort="-x", title="Country"),
             alt.X("counts", title="Reservations"),
@@ -1014,7 +964,7 @@ def histogram_2(hotel_type, year, month):
             df,
             title="Lengths of Stay " + str(months_short[month - 1]) + " " + str(year),
         )
-        .mark_bar(clip=True, color="orange", size=25)
+        .mark_bar(clip=True, size=25)
         .encode(
             alt.X(
                 "Total nights",

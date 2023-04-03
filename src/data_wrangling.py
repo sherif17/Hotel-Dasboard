@@ -345,8 +345,178 @@ def get_guest_map_prices_busy_months():
     max_bookings_month = hotels.groupby('arrival_date_month')['hotel'].count().sort_values(ascending=False).iloc[0]
 
 
+    city_hotel_cancellation = hotels[hotels['hotel'] == 'City Hotel']
+    city_hotel_cancellation_count = city_hotel_cancellation['is_canceled'].value_counts()
+    city_hotel_cancellation_df = pd.DataFrame(
+        {'hotel': 'City Hotel', 'is_canceled': city_hotel_cancellation_count.index,
+         'count': city_hotel_cancellation_count.values})
 
-    return guest_map,prices,busy_months,total_bookings,cancelled_bookings,max_bookings_month
+    resort_hotel_cancellation = hotels[hotels['hotel'] == 'Resort Hotel']
+    resort_hotel_cancellation_count = resort_hotel_cancellation['is_canceled'].value_counts()
+    resort_hotel_cancellation_df = pd.DataFrame(
+        {'hotel': 'Resort Hotel', 'is_canceled': resort_hotel_cancellation_count.index,
+         'count': resort_hotel_cancellation_count.values})
+    cancellation_df = city_hotel_cancellation_df.append(resort_hotel_cancellation_df)
+    fig = px.bar(cancellation_df, x='is_canceled', y='count', color='hotel', barmode="group", width=600, height=500)
+    fig.update_layout(
+        title='Number of Cancelations According to Hotel Type',
+        xaxis_title="Cancellation Status",
+        yaxis_title="Number of Cancelations",
+        legend_title="Hotel Type",
+        font=dict(
+            size=15
+        )
+    )
+    fig.layout.template = 'plotly'
+
+
+    return guest_map,prices,busy_months,total_bookings,cancelled_bookings,max_bookings_month,fig
+
+def sherif_func():
+    # Replace missing values:
+    # agent: If no agency is given, booking was most likely made without one.
+    # company: If none given, it was most likely private.
+    # rest schould be self-explanatory.
+    full_data = pd.read_csv('hotels.csv')
+    nan_replacements = {"children:": 0.0, "country": "Unknown", "agent": 0, "company": 0}
+    full_data_cln = full_data.fillna(nan_replacements)
+
+    # "meal" contains values "Undefined", which is equal to SC.
+    full_data_cln["meal"].replace("Undefined", "SC", inplace=True)
+
+    # Some rows contain entreis with 0 adults, 0 children and 0 babies.
+    # I'm dropping these entries with no guests.
+    zero_guests = list(full_data_cln.loc[full_data_cln["adults"]
+                                         + full_data_cln["children"]
+                                         + full_data_cln["babies"] == 0].index)
+    full_data_cln.drop(full_data_cln.index[zero_guests], inplace=True)
+    # After cleaning, separate Resort and City hotel
+    # To know the acutal visitor numbers, only bookings that were not canceled are included.
+    rh = full_data_cln.loc[(full_data_cln["hotel"] == "Resort Hotel") & (full_data_cln["is_canceled"] == 0)]
+    ch = full_data_cln.loc[(full_data_cln["hotel"] == "City Hotel") & (full_data_cln["is_canceled"] == 0)]
+    # Counting adults and children as paying guests only, not babies.
+    rh["adr_pp"] = rh["adr"] / (rh["adults"] + rh["children"])
+    ch["adr_pp"] = ch["adr"] / (ch["adults"] + ch["children"])
+    # Create a DateFrame with the relevant data:
+    rh["total_nights"] = rh["stays_in_weekend_nights"] + rh["stays_in_week_nights"]
+    ch["total_nights"] = ch["stays_in_weekend_nights"] + ch["stays_in_week_nights"]
+
+    num_nights_res = list(rh["total_nights"].value_counts().index)
+    num_bookings_res = list(rh["total_nights"].value_counts())
+    rel_bookings_res = rh["total_nights"].value_counts() / sum(num_bookings_res) * 100  # convert to percent
+
+    num_nights_cty = list(ch["total_nights"].value_counts().index)
+    num_bookings_cty = list(ch["total_nights"].value_counts())
+    rel_bookings_cty = ch["total_nights"].value_counts() / sum(num_bookings_cty) * 100  # convert to percent
+
+    res_nights = pd.DataFrame({"hotel": "Resort hotel",
+                               "num_nights": num_nights_res,
+                               "rel_num_bookings": rel_bookings_res})
+
+    cty_nights = pd.DataFrame({"hotel": "City hotel",
+                               "num_nights": num_nights_cty,
+                               "rel_num_bookings": rel_bookings_cty})
+
+    nights_data = pd.concat([res_nights, cty_nights], ignore_index=True)
+
+    length_of_stay = px.bar(nights_data, x='num_nights', y='rel_num_bookings',
+                            color='hotel', barmode='group',
+                            category_orders={"hotel": ["City hotel", "Resort hotel"]})
+    length_of_stay.update_layout(title="Length of stay", xaxis_title="Number of nights",
+                                 yaxis_title="Guests [%]", legend_title="Hotel",
+                                 font=dict(
+                                     size=15
+                                 ),
+                                 xaxis_range=[0, 22], width=600, height=500)
+
+    # total bookings per market segment (incl. canceled)
+    segments = full_data_cln["market_segment"].value_counts()
+
+    cancel_sizes = full_data_cln["is_canceled"].value_counts()
+    # pie plot
+    booking_Segment = px.pie(segments,
+                             values=segments.values,
+                             names=segments.index,
+                             #title="Bookings per market segment",
+                             template="seaborn")
+    booking_Segment.update_traces(rotation=-90, textinfo="percent+label")
+
+    cancel_sizes = px.pie(cancel_sizes,
+                             values=cancel_sizes.values,
+                             names=cancel_sizes.index,
+                             #title="Bookings per market segment",
+                             template="seaborn")
+    cancel_sizes.update_traces(rotation=-90, textinfo="percent+label")
+
+    # Create a DateFrame with the relevant data:
+    res_book_per_month = full_data_cln.loc[(full_data_cln["hotel"] == "Resort Hotel")].groupby("arrival_date_month")[
+        "hotel"].count()
+    res_cancel_per_month = full_data_cln.loc[(full_data_cln["hotel"] == "Resort Hotel")].groupby("arrival_date_month")[
+        "is_canceled"].sum()
+
+    cty_book_per_month = full_data_cln.loc[(full_data_cln["hotel"] == "City Hotel")].groupby("arrival_date_month")[
+        "hotel"].count()
+    cty_cancel_per_month = full_data_cln.loc[(full_data_cln["hotel"] == "City Hotel")].groupby("arrival_date_month")[
+        "is_canceled"].sum()
+
+    res_cancel_data = pd.DataFrame({"Hotel": "Resort Hotel",
+                                    "Month": list(res_book_per_month.index),
+                                    "Bookings": list(res_book_per_month.values),
+                                    "Cancelations": list(res_cancel_per_month.values)})
+    cty_cancel_data = pd.DataFrame({"Hotel": "City Hotel",
+                                    "Month": list(cty_book_per_month.index),
+                                    "Bookings": list(cty_book_per_month.values),
+                                    "Cancelations": list(cty_cancel_per_month.values)})
+
+    full_cancel_data = pd.concat([res_cancel_data, cty_cancel_data], ignore_index=True)
+    full_cancel_data["cancel_percent"] = full_cancel_data["Cancelations"] / full_cancel_data["Bookings"] * 100
+
+    # order by month:
+    ordered_months = ["January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"]
+    full_cancel_data["Month"] = pd.Categorical(full_cancel_data["Month"], categories=ordered_months, ordered=True)
+
+    booking_canceled = px.bar(full_cancel_data, x="Month", y="cancel_percent", color="Hotel",
+                              color_discrete_sequence=["#636EFA", "#EF553B"],
+                              category_orders={"Month": ["January", "February", "March", "April", "May", "June",
+                                                         "July", "August", "September", "October", "November",
+                                                         "December"],
+                                               "Hotel": ["City Hotel", "Resort Hotel"]},
+                              barmode='group')
+
+    booking_canceled.update_traces(marker_line_width=0)
+
+    booking_canceled.update_layout(title="Cancelations per month", xaxis_title="Month", yaxis_title="Cancelations [%]",
+                                   legend=dict(title="Hotel", orientation="h", yanchor="bottom", y=1.02,
+                                               xanchor="right", x=1))
+
+    # Create a DateFrame with the relevant data:
+    resort_guests_monthly = rh.groupby("arrival_date_month")["hotel"].count()
+    city_guests_monthly = ch.groupby("arrival_date_month")["hotel"].count()
+
+    resort_guest_data = pd.DataFrame({"month": list(resort_guests_monthly.index),
+                                      "hotel": "Resort hotel",
+                                      "guests": list(resort_guests_monthly.values)})
+
+    city_guest_data = pd.DataFrame({"month": list(city_guests_monthly.index),
+                                    "hotel": "City hotel",
+                                    "guests": list(city_guests_monthly.values)})
+
+    full_guest_data = pd.concat([resort_guest_data, city_guest_data], ignore_index=True)
+
+    # order by month:
+    ordered_months = ["January", "February", "March", "April", "May", "June",
+                      "July", "August", "September", "October", "November", "December"]
+    full_guest_data["month"] = pd.Categorical(full_guest_data["month"], categories=ordered_months, ordered=True)
+
+    # Dataset contains July and August date from 3 years, the other month from 2 years. Normalize data:
+    full_guest_data.loc[(full_guest_data["month"] == "July") | (full_guest_data["month"] == "August"),
+                        "guests"] /= 3
+    full_guest_data.loc[~((full_guest_data["month"] == "July") | (full_guest_data["month"] == "August")),
+                        "guests"] /= 2
+
+    return length_of_stay,cancel_sizes,booking_Segment,booking_canceled
+
 
 if __name__ == "__main__":
     main()

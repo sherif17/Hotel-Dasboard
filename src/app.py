@@ -24,6 +24,8 @@ from data_wrangling import (
 )
 guest_map,prices,busy_months,total_bookings,cancelled_bookings,max_bookings_month,fig=get_guest_map_prices_busy_months()
 length_of_stay,cancel_sizes,booking_Segment,booking_canceled=sherif_func()
+
+
 app = dash.Dash(
     external_stylesheets=[dbc.themes.BOOTSTRAP], title="Super Hotel Management",suppress_callback_exceptions=True
 )
@@ -190,7 +192,7 @@ card_top = dbc.Card(
                                     style={
                                         "text-align": "center",
                                         "fontWeight": "bold",
-                                        #"color": "#537aaa",
+                                        "color": "#537aaa",
 
                                     },
                                 ),
@@ -200,10 +202,10 @@ card_top = dbc.Card(
                                     style={
                                         "text-align": "center",
                                          "fontWeight": "bold",
-                                      #  "color": "#f9a200",
+                                       "color": "#f9a200",
                                     },
                                 ),
-                            ],
+                            ]
                         ),
                         dbc.Col(
                             [
@@ -221,7 +223,7 @@ card_top = dbc.Card(
                                     style={
                                         "text-align": "center",
                                          "fontWeight": "bold",
-                                        #"color": "#537aaa",
+                                        "color": "#537aaa",
                                     },
                                 ),
                                 html.P(
@@ -230,10 +232,10 @@ card_top = dbc.Card(
                                     style={
                                         "text-align": "center",
                                          "fontWeight": "bold",
-                                        #"color": "#f9a200",
+                                        "color": "#f9a200",
                                     },
                                 ),
-                            ],
+                            ]
                         ),
                     ],
                 ),
@@ -242,9 +244,9 @@ card_top = dbc.Card(
     ],
     className="w-100 mb-3",
     style={
-        "border": "1.5px solid #d3d3d3",
-        "margin-left": "15px",
-        "margin-right": "15px",
+        "border": "1px solid #d3d3d3",
+        "margin-left": "0px",
+        "margin-right": "0px",
     },
 )
 
@@ -293,7 +295,7 @@ jumbotron = dbc.Container(
                                     className="display-4",
                                     style={
                                         "text-align": "left",
-                                        "font-size": "35px",
+                                        "font-size": "45px",
                                         "color": "black",
                                         "fontWeight": "bold",
                                     },
@@ -315,8 +317,8 @@ jumbotron = dbc.Container(
             ],
             fluid=True,
                 style={
-                    "padding": 5,
-                    "height": "135px"
+                    "padding": 0,
+                    "height": "150px"
                 },
         )
 
@@ -376,7 +378,7 @@ info_area = dbc.Container(
                         "background-color": "white",
                         "padding": 10,
                         "border-radius": 5,
-                        "margin-right": "5px",
+                        "margin-right": "10px",
                         "border": "1.5px solid #d3d3d3",
                     },
                 ),
@@ -399,7 +401,7 @@ info_area = dbc.Container(
 )
 
 footer = dcc.Markdown(
-    """This dashboard is made by NC Team(Sherif, Ola and Nouran [Link to GitHub source](https://github.com/sherif17/Hotel-Dasboard). The data has been sourced from [Link to data source](https://www.kaggle.com/datasets/jessemostipak/hotel-booking-demand).""",
+    """This dashboard is made by NC Team (Sherif, Ola and Nouran) [Link to GitHub source](https://github.com/sherif17/Hotel-Dasboard). The data has been sourced from [Link to data source](https://www.kaggle.com/datasets/jessemostipak/hotel-booking-demand).""",
     style={"text-align": "center"},
 )
 
@@ -579,7 +581,7 @@ card_top3 = dbc.Card(
     [
         dbc.Row(
             [
-                dbc.Card([dcc.Graph(figure=booking_canceled)])
+                dbc.Card([  html.H1(children='Cancelations per month', style={'textAlign': 'center'}),dcc.Graph(figure=booking_canceled)])
             ],
         )
     ],
@@ -594,7 +596,8 @@ card_top31 = dbc.Card(
     [
         dbc.Row(
             [
-                dbc.Card([dcc.Graph(figure=busy_months)])
+                dbc.Card([  html.H1(children='Average number of guests per month', style={'textAlign': 'center'}),
+                            dcc.Graph(figure=busy_months)])
             ],
         )
     ],
@@ -609,6 +612,7 @@ card_left3 = dbc.Card(
     [
         dbc.Row(
             [
+        # html.H1(children='Length of stay for guests', style={'textAlign': 'center'}),
                 dbc.Card([dcc.Graph(figure=length_of_stay)])
             ],
         )
@@ -664,16 +668,16 @@ SIDEBAR_STYLE = {
     "left": 0,
     "bottom": 0,
     "width": "14rem",
-    "padding": "2rem 1rem",
+    "padding": "1rem 1rem",
     "background-color": "#f8f9fa",
 }
 
 # the styles for the main content position it to the right of the sidebar and
 # add some padding.
 CONTENT_STYLE = {
-    "margin-left": "18rem",
-    "margin-right": "2rem",
-    "padding": "2rem 1rem",
+    "margin-left": "14rem",
+    "margin-right": "1rem",
+    "padding": "1rem 1rem",
 }
 
 sidebar = html.Div(

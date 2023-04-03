@@ -65,7 +65,7 @@ def get_year_stats(data, scope="all_time", ycol="Reservations", year=2016):
     mini = round(data.iloc[min_ind, 2])
     max_month = months_short[data.iloc[max_ind, 0] - 1]
     min_month = months_short[data.iloc[min_ind, 0] - 1]
-
+    print('max_month : ',max_month)
     string += f"Ave : {ave},  Max : {maxi}({max_month}),  Min : {mini}({min_month})"
     return string
 
@@ -486,7 +486,7 @@ def sherif_func():
 
     booking_canceled.update_traces(marker_line_width=0)
 
-    booking_canceled.update_layout(title="Cancelations per month", xaxis_title="Month", yaxis_title="Cancelations [%]",
+    booking_canceled.update_layout( xaxis_title="Month", yaxis_title="Cancelations [%]",
                                    legend=dict(title="Hotel", orientation="h", yanchor="bottom", y=1.02,
                                                xanchor="right", x=1))
 

@@ -18,13 +18,18 @@ hotels = pd.read_csv("data/raw/hotels.csv")
 months = ["January", "February", "March", "April",
           "May", "June", "July", "August", "September", 
           "October", "November", "December"]
+
 hotels["arrival_date_month"] = hotels["arrival_date_month"].replace(months,[1,2,3,4,5,6,7,8,9,10,11,12])
+
 hotels["Arrival date"] = pd.to_datetime(hotels.arrival_date_year*10000 + hotels.arrival_date_month*100 + hotels.arrival_date_day_of_month, 
                                         format = '%Y%m%d')
 hotels["Arrival day of week"] = hotels["Arrival date"].dt.dayofweek
+
 hotels["Arrival day of week"] = hotels["Arrival day of week"].replace([0,1,2,3,4,5,6],["Mon", "Tues", "Wed", "Thur", "Fri", "Sat", "Sun"])
+
 hotels["Total nights"] = hotels["stays_in_weekend_nights"] + hotels["stays_in_week_nights"]
 # drop unused columns
+
 hotels = hotels.drop(columns=['agent', 'company', 'lead_time',
                               'market_segment', 'distribution_channel',
                               'is_repeated_guest', 'previous_cancellations',
@@ -32,8 +37,11 @@ hotels = hotels.drop(columns=['agent', 'company', 'lead_time',
                               'assigned_room_type','deposit_type',
                               'days_in_waiting_list', 'customer_type', 'reservation_status', 
                               'reservation_status_date', 'meal'], )
+
 # Change values to make more readable
 hotels["hotel"] = hotels["hotel"].replace(["Resort Hotel", "City Hotel"], ["Resort", "City"])
+
+# select 19 features
 # change column names to make more readable
 hotels.columns = ['Hotel type', 'Cancelled', 'Arrival year',
                   'Arrival month', 'Arrival week', 'Arrival day', 'Weekend nights', 
